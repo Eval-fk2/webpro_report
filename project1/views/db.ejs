@@ -1,0 +1,38 @@
+<!Doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>データ一覧</title>
+</head>
+<body>
+  <h2>データ一覧</h2>
+  <table>
+    <tr>
+      <th>ID</th>
+
+      <% for (const { label } of db_properties) { %>
+        <th><%= label %></th>
+      <% } %>
+
+    </tr>
+
+    <% for (const data of dataList) { %>
+      <tr>
+        <td><%= data.id %></td>
+
+        <% for (const { propertyName } of db_properties) { %>
+          <% if (propertyName === 'name') { %>
+            <td><a href="/db/<%= data.id %>"><%= data[propertyName] %></a></td>
+          <% } else { %>
+            <td><%= data[propertyName] %></td>
+          <% } %>
+        <% } %>
+
+      </tr>
+    <% } %>
+
+  </table><br>
+
+  <p><a href="/public/db_add.html">データを追加する</a></p>
+</body>
+</html>

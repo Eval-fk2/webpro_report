@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>編集する</title>
+</head>
+<body>
+  <form action="/db_edit_complete/<%= data.id%>">
+    <% for (const {propertyName, label, type} of db_properties) { %>
+      <label for="<%= propertyName %>"><%= label%></label>
+      <input type="<%= type %>" name="<%= propertyName %>" id="<%= propertyName %>" value="<%= data[propertyName]%>" required>
+    <% }; %>
+    <input type="submit" values="編集">
+  </form>
+</body>
+</html>
