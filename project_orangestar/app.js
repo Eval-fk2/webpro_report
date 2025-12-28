@@ -14,7 +14,7 @@ const properties = [
   {propertyName: 'arangement', label: '編曲', type: 'text'},
   {propertyName: 'vocal', label: '歌唱', type: 'text'},
   {propertyName: 'album', label: '収録アルバム', type: 'text', view: false},
-  {propertyName: 'long', label: '長さ', type: 'time', min: "00:00", step: 1, view: false},
+  {propertyName: 'long', label: '長さ', type: 'time', min: '00:00:00', step: 1, view: false},
   {propertyName: 'url', label: 'URL', type: 'url'},
   {propertyName: 'words', label: '歌詞', type: 'textarea', view: false},
 ];
