@@ -2,14 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>編集</title>
+  <title>追加</title>
 </head>
 <body>
-  <form action="/db_edit_complete/<%= data.id%>">
+  <form action="/db_add_complete">
     <% for (const property of properties) { %>
       <% if (property.type === 'text') { %>
         <label for="<%= property.propertyName %>"><%= property.label%></label><br>
-        <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>" value="<%= data[property.propertyName]%>"
+        <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>"
         <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
         ><br>
       <% }; %>
@@ -20,7 +20,6 @@
           type="number"
           name="<%= property.propertyName %>"
           id="<%= property.propertyName %>"
-          value="<%= data[property.propertyName]%>"
           <% if (property.min !== undefined) { %> min="<%= property.min %>" <% }; %>
           <% if (property.max !== undefined) { %> max="<%= property.max %>" <% }; %>
           <% if (property.step !== undefined) { %> step="<%= property.step %>" <% }; %>
@@ -32,35 +31,33 @@
         <label for="<%= property.propertyName %>"><%= property.label %></label><br>
         <select id="<%= property.propertyName %>" name="<%= property.propertyName %>">
           <% for (const optionData of property.options) { %>
-              <option value="<%= optionData %>"
-                <% if (data[property.propertyName] === optionData) { %>selected<% }; %>  
-              ><%= optionData %></option>
+              <option value="<%= optionData %>"><%= optionData %></option>
           <% }; %>
-        </select>
+        </select><br>
       <% }; %>
 
       <% if (property.type === 'url') { %>
         <label for="<%= property.propertyName %>"><%= property.label %></label><br>
-        <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>" value="<%= data[property.propertyName] %>"
+        <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>"
         <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
         ><br>
       <% }; %>
 
       <% if (property.type === 'time') {%>
-      <label for="<%= property.propertyName %>"><%= property.label %></label><br>
-      <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>" value="<%= data[property.propertyName] %>"
-      <% if (property.min !== undefined) { %> min="<%= property.min %>" <% }; %>
-      <% if (property.max !== undefined) { %> max="<%= property.max %>" <% }; %>
-      <% if (property.step !== undefined) { %> step="<%= property.step %>" <% }; %>
-      <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
-      ><br>
+        <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+        <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>"
+        <% if (property.min !== undefined) { %> min="<%= property.min %>" <% }; %>
+        <% if (property.max !== undefined) { %> max="<%= property.max %>" <% }; %>
+        <% if (property.step !== undefined) { %> step="<%= property.step %>" <% }; %>
+        <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+        ><br>
       <% }; %>
 
       <% if (property.type === 'textarea') { %>
         <label for="<%= property.propertyName %>"><%= property.label%></label><br>
         <textarea name="<%= property.propertyName %>" id="<%= property.propertyName %>"
         <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
-        ><%= data[property.propertyName]%></textarea><br>
+        ></textarea><br>
       <% }; %>
     <% }; %>
     <input type="submit">

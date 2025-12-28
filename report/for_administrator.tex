@@ -1,0 +1,56 @@
+\chapter{管理者向け仕様書}
+
+\section{動作環境}
+本システムはNode.jsを用いて構築されたWebアプリケーションであり，以下の環境で動作する．
+
+\begin{itemize}
+    \item OS：macOS
+    \item Node.js：v20以上
+    \item Package Manager: npm
+    \item Web ブラウザ：Google Chrome
+\end{itemize}
+
+\section{必要なソフトウェアおよびインストール手順}
+
+\subsection{Node.jsのインストール}
+以下の公式サイトよりNode.jsをダウンロードし，インストールする．
+
+URL：\url{https://nodejs.org/}
+
+\subsection{必要パッケージのインストール}
+ターミナルより，/webpro\_reportディレクトリへ移動し，以下のコマンドを実行する．
+
+\verb|npm install|
+
+\section{フォルダ構成}
+本システムは複数のサービスごとにフォルダが分割されており，各サービスは
+
+\verb|project_{プロジェクト名}|
+
+といった名称で管理される．
+各サービスを起動する際は該当フォルダへ移動してから実行する必要がある．
+
+\section{起動手順}
+
+\subsection{サービスフォルダへ移動}
+実行したいサービス（例：\verb|project_serviceA|）のフォルダに移動する．
+
+\verb|cd project_serviceA|
+
+\subsection{サーバの起動}
+以下のコマンドを実行することで，対象サービスのWebサーバが起動する．
+
+\verb|node app.js|
+
+ターミナルに Example app listening on port 8080! と表示されていれば起動が成功している．
+
+起動後，ブラウザで以下にアクセスする．
+
+\url{http://localhost:8080/db}
+
+\subsection{サーバの停止}
+実行中のターミナルで以下の操作を行う．
+
+\verb|Control + C|
+
+これによりWebサーバが停止する．

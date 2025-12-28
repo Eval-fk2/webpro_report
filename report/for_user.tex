@@ -1,0 +1,142 @@
+\chapter{Orangestar曲一覧 利用者向け仕様書}
+
+\section{サービス概要}
+Orangestar曲一覧とは，ボカロP，Orangestar氏によって作られた多くの楽曲の情報をまとめたサービスである．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/page_move.png}
+  \caption{ページ遷移図}
+  \label{fig:page_move}
+\end{figure}
+
+\section{アクセス方法}
+\url{http://localhost:8080/db}\\
+から，一覧表示ページにアクセスできる．
+
+\section{一覧表示ページ}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=15cm\textwidth]{fig/os_list_page.png}
+  \caption{一覧表示ページ}
+  \label{fig:os_list_page}
+\end{figure}
+
+一覧表示ページでは，登録されている楽曲の情報を一覧で見ることができる．\\
+下記の情報が表示される．
+\begin{itemize}
+    \item id
+    \item 曲名
+    \item 作曲者
+    \item 作詞者
+    \item 編曲者
+    \item 歌唱者
+    \item URL
+\end{itemize}
+
+「曲を追加する」より，追加ページへアクセスする．\\
+楽曲名をクリックすることで，各楽曲の詳細表示ページへアクセスする．\\
+URLをクリックすることで，各楽曲を再生可能なページへアクセスする．
+
+\section{追加ページ}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=5cm\textwidth]{fig/os_add_page.png}
+  \caption{追加ページ}
+  \label{fig:os_add_page}
+\end{figure}
+
+追加ページでは，新たに楽曲を追加できる．\\ 
+下記の情報を入力できる．
+\begin{itemize}
+    \item 曲名
+    \item 作曲者
+    \item 作詞者
+    \item 編曲者
+    \item 歌唱者
+    \item 収録アルバム名
+    \item 曲の長さ
+    \item URL
+    \item 歌詞
+\end{itemize}
+
+idは自動的に決定されるので，ユーザーは指定できない．\\
+曲名のみ入力必須となっている．\\
+送信ボタンを押すと，曲が追加され，一覧表示ページに移動する．
+
+\section{詳細表示ページ}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/os_detail_page.png}
+  \caption{詳細表示ページ}
+  \label{fig:os_detail_page}
+\end{figure}
+
+詳細表示ページでは，その楽曲が持つすべての情報を見ることができる．\\
+下記の情報が表示される．
+\begin{itemize}
+    \item id
+    \item 曲名
+    \item 作曲者
+    \item 作詞者
+    \item 編曲者
+    \item 歌唱者
+    \item 収録アルバム名
+    \item 曲の長さ
+    \item URL
+    \item 歌詞
+\end{itemize}
+
+URLをクリックすることで，各楽曲を再生可能なページへアクセスする．\\
+「一覧に戻る」より，一覧表示ページに戻る．\\
+「削除する」より，削除ページへアクセスする．\\
+「編集する」より，編集ページへアクセスする．
+
+\section{削除ページ}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/os_remove_page.png}
+  \caption{削除ページ}
+  \label{fig:os_remove_page}
+\end{figure}
+
+削除ページでは，曲を削除する際の最終確認が求められる．\\
+「キャンセル」より，詳細表示ページに戻る．\\
+「削除する」より，曲を削除し，一覧表示ページへアクセスする．
+
+\section{編集ページ}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=5cm\textwidth]{fig/os_edit_page.png}
+  \caption{編集ページ}
+  \label{fig:os_edit_page}
+\end{figure}
+
+編集ページでは，既存の曲の情報を編集することができる．\\
+下記の情報を編集できる．
+\begin{itemize}
+    \item 曲名
+    \item 作曲者
+    \item 作詞者
+    \item 編曲者
+    \item 歌唱者
+    \item 収録アルバム名
+    \item 曲の長さ
+    \item URL
+    \item 歌詞
+\end{itemize}
+
+idは自動的に決定されるので，ユーザーは編集できない．\\
+曲名のみ入力必須となっている．\\
+送信ボタンを押すと，曲の情報が編集され，詳細表示ページに移動する．
+
+\section{エラーページ}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/error_page.png}
+  \caption{エラーページ}
+  \label{fig:error_page}
+\end{figure}
+
+ページ間を移動する際，曲の情報がうまく取得できないとエラーとなり，このページが表示される．\\
+「一覧に戻る」より，一覧表示ページに戻る．

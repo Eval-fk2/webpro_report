@@ -1,0 +1,738 @@
+\chapter{Overwatchキャラ一覧 開発者向け仕様書}
+
+\section{サービス概要}
+Overwatchキャラ一覧とは，FPSゲーム，Overwatch2に登場する多くのキャラの情報をまとめたサービスである．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/page_move_dev.png}
+  \caption{ページ遷移図}
+  \label{fig:page_move_dev}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=5cm\textwidth]{fig/folder_overwatch.png}
+  \caption{フォルダ構成}
+  \label{fig:folder_overwatch}
+\end{figure}
+
+\section{プログラムの説明}
+\subsection{app.js}
+\subsubsection{app.jsの概要と全体}
+app.jsは，データの管理やページ遷移など，このサービスにおけるメインの処理を務める．
+
+\begin{lstlisting}[language=javascript]
+    "use strict";
+    const strict = require('assert/strict');
+    const express = require('express');
+    const app = express();
+
+    app.set('view engine', 'ejs');
+    app.use('/public', express.static(__dirname + '/public'));
+
+    let idManager = 0;
+    const properties = [
+      {propertyName: 'name', label: '名前', type: 'text', required: true},
+      {propertyName: 'role', label: 'ロール', type: 'select', options: ['タンク', 'ダメージ', 'サポート']},
+      {propertyName: 'hp', label: 'HP', type: 'number', min: 0, step: 1, view: false, required: true},
+      {propertyName: 'mainSkill', label: 'メイン攻撃', type: 'text', view: false},
+      {propertyName: 'subSkill', label: 'サブ攻撃', type: 'text', view: false},
+      {propertyName: 'ability1', label: 'アビリティ1', type: 'text', view: false},
+      {propertyName: 'ability2', label: 'アビリティ2', type: 'text', view: false},
+      {propertyName: 'ultimate', label: 'アルティメット', type: 'text', view: false},
+      {propertyName: 'passive', label: 'パッシブ', type: 'text', view: false},
+    ];
+    const propertySettings = {
+      main: 'name',
+      click: 'name'
+    };
+    let dataList = [];
+
+    setDefaultData();
+
+    app.get('/db', (req, res) => {
+      res.render('db', {dataList, properties, propertySettings} );
+    });
+
+    app.get('/db/:id', (req, res) => {
+      const id = req.params.id;
+      const data = dataList.find(a => a.id == id);
+      if (data === undefined) {
+        error(res);
+        return;
+      };
+      res.render('db_detail', {data, properties, propertySettings} );
+    });
+
+    app.get('/db_add', (req, res) => {
+      res.render('db_add', {properties});
+    });
+
+    app.get('/db_add_complete', (req, res) => {
+      const data = req.query;
+      addData(data);
+      res.redirect('/db');
+    });
+
+    app.get('/db_remove/:id', (req, res) => {
+      const id = req.params.id;
+      const data = dataList.find(a => a.id == id);
+      if (data === undefined) {
+        error(res);
+        return;
+      };
+      res.render('db_remove',{data, propertySettings});
+    });
+
+    app.get('/db_remove_complete/:id', (req, res) => {
+      const id = req.params.id;
+      removeData(id);
+      res.redirect('/db');
+    });
+
+    app.get('/db_edit/:id', (req, res) => {
+      const id = req.params.id;
+      const data = dataList.find(a => a.id == id);
+      if (data === undefined) {
+        error(res);
+        return;
+      };
+      res.render('db_edit', {data, properties});
+    });
+
+    app.get('/db_edit_complete/:id', (req, res) => {
+      const id = req.params.id;
+      const data = req.query;
+      const edit = editData(id, data);
+      if (edit === false) {
+        error(res);
+        return;
+      }
+      res.redirect(`/db/${id}`);
+    });
+
+    app.listen(8080, () => console.log('Example app listening on port 8080!'));
+
+    function getId() {
+      idManager++;
+      return idManager;
+    };
+
+    function addData(data) {
+      data['id'] = getId();
+      dataList.push(data);
+    };
+
+    function removeData(id) {
+      dataList = dataList.filter(a => a.id != id);
+    };
+
+    function editData(id, data) {
+      const dataIndex = dataList.findIndex(a => a.id == id);
+      if (dataIndex === -1) return false;
+      for (const {propertyName} of properties) {
+        dataList[dataIndex][propertyName] = data[propertyName];
+      };
+      return true;
+    };
+
+    function error(res) {
+      res.redirect('/public/db_error.html');
+    };
+
+    function setDefaultData() {
+      const defaultData = [
+        ['キャラ名', 'ロール', 'HP', 'メイン攻撃', 'サブ攻撃', 'アビリティ1', 'アビリティ2', 'アルティメット', 'パッシブ'],
+        ['キャラ名', 'ロール', 'HP', 'メイン攻撃', 'サブ攻撃', 'アビリティ1', 'アビリティ2', 'アルティメット', 'パッシブ'],
+        ['キャラ名', 'ロール', 'HP', 'メイン攻撃', 'サブ攻撃', 'アビリティ1', 'アビリティ2', 'アルティメット', 'パッシブ'],
+        ...
+
+      ];
+      for (const data of defaultData) {
+        const fixedData = {};
+        for (let i = 0; i < properties.length; i++) {
+          fixedData[properties[i].propertyName] = data[i];
+        };
+        addData(fixedData);
+      };
+    };
+\end{lstlisting}
+
+\subsubsection{使用する変数}
+\begin{itemize}
+    \item idManger(9行目): 各キャラのオブジェクトごとに割り当てる固有のidを管理する変数．
+    \item properties(10行目): キャラが持つ複数の情報を各項目ごとに管理，設定する定数．
+    \begin{table}[H]
+        \caption{properties内のオブジェクトで使用可能な要素一覧}
+        \centering
+        \begin{tabular}{|c|c|c|}
+            \hline
+            要素名&役割&必須/任意\\
+            \hline
+            propertyName&プログラム内での項目名を設定する．&必須\\
+            \hline
+            label&ブラウザ上で表示する項目名を設定する．&必須\\
+            \hline
+            type&
+            \parbox[t]{7cm}{項目の情報種別を設定する．
+            また，これによってキャラの追加や編集時の情報の入力方法が変化する．
+            使用可能なタイプは表 \ref{table:type}に示す．
+            }
+            &必須\\
+            \hline
+            required&
+            \parbox[t]{7cm}{その項目が入力必須項目かを設定する．\\
+            undefined，またはfalseで任意．trueで必須．}
+            &任意\\
+            \hline
+            view&
+            \parbox[t]{7cm}{一覧表示ページで項目を表示するか設定する．\\
+            undefined，またはtrueで表示．falseで非表示．}
+            &任意\\
+            \hline
+        \end{tabular}
+        \label{table:properties}
+    \end{table}
+
+    \begin{table}[H]
+        \caption{typeで使用可能なタイプ一覧}
+        \centering
+        \resizebox{\textwidth}{!}{
+        \begin{tabular}{|c|c|c|c|c|}
+            \hline
+            \multirow{2}{*}{タイプ}&\multirow{2}{*}{役割}&\multicolumn{3}{|c|}{各タイプが持つ固有要素}\\
+            \cline{3-5}
+            &&要素名&役割&任意/必須\\
+            \hline
+            'text'&1行のみの文字列の情報を扱う．&-&-&-\\
+            \hline
+            \multirow{3}{*}{'number'}&\multirow{3}{*}{数値の情報を扱う．}&min&
+            \parbox[t]{4cm}{数値のみ入力可能．指定可能な最小値を設定する．}
+            &任意\\
+            \cline{3-5}
+            &&max&
+            \parbox[t]{4cm}{数値のみ入力可能．指定可能な最大値を設定する．}
+            &任意\\
+            \cline{3-5}
+            &&step&
+            \parbox[t]{4cm}{数値のみ入力可能．指定可能な数値の間隔を設定する．}
+            &任意\\
+            \hline
+            'select'&ドロップダウンで特定の選択肢内の情報を扱う．&options&
+            \parbox[t]{4cm}{配列のみ入力可能．選択肢を設定する．}
+            &必須\\
+            \hline
+            'url'&URLの情報を扱う．&-&-&-\\
+            \hline
+            \multirow{3}{*}{'time'}&\multirow{3}{*}{時間の情報を扱う．}&min&
+            \parbox[t]{4cm}{時刻文字列('00:00:00')のみ入力可能．指定可能な最小時間を設定する．}
+            &任意\\
+            \cline{3-5}
+            &&max&
+            \parbox[t]{4cm}{時刻文字列('00:00:00')のみ入力可能．指定可能な最大時間を設定する．}
+            &任意\\
+            \cline{3-5}
+            &&step&
+            \parbox[t]{4cm}{数値のみ入力可能．指定可能な時間(秒)の間隔を設定する．}
+            &任意\\
+            \hline
+            'textarea'&改行ありの文字列の情報を扱う．&-&-&-\\
+            \hline
+        \end{tabular}
+        }
+        \label{table:type}
+    \end{table}
+
+    \item propertySettings(21行目): サービス全体において，特定の役割を果たす項目を設定する定数．
+    \begin{table}[H]
+        \caption{propertySettingsで使用可能な要素一覧}
+        \centering
+        \begin{tabular}{|c|c|}
+            \hline
+            要素名&役割\\
+            \hline
+            main&\parbox[t]{6cm}{項目名のみ入力可能．キャラのオブジェクトをブラウザ上でユーザーに向けて表す時，代表となる項目を設定する．}\\
+            \hline
+            click&\parbox[t]{6cm}{項目名のみ入力可能．一覧表示ページから詳細表示ページに移動するためのクリック機能をどの項目に割り当てるのかを設定する．}\\
+            \hline
+        \end{tabular}
+        \label{table:propertySettings}
+    \end{table}
+
+    \item dataList: キャラのオブジェクトを保存しておくための変数．
+\end{itemize}
+
+\subsubsection{ページ遷移機能}
+\begin{itemize}
+    \item '/db'(29行目): 一覧表示ページ(db.ejs)を呼び出す機能を持つ．\\
+    一覧表示ページ(db.ejs)にdataList，properties，propertysettingsを渡して呼び出す．
+
+    \item '/db/:id'(33行目): 詳細表示ページ(db\_detail.ejs)を呼び出す機能を持つ．\\
+    urlのidからキャラのオブジェクトを定数dtaとして取得し，詳細表示ページ(db\_detail.ejs)にdata，properties，propertySettingsを渡して呼び出す．\\
+    idからオブジェクトを取得できなかった場合は関数errorを実行し，returnする．
+
+    \item '/db\_add'(43行目): 追加ページ(db\_add.ejs)を呼び出す機能を持つ．\\
+    追加ページ(db\_add.ejs)にpropertiesを渡して呼び出す．
+
+    \item '/db\_add\_complete'(47行目): キャラの追加処理を行う機能を持つ．\\
+    追加ページ(db\_add.ejs)から入力された情報を定数dataとして受け取り，関数addDataにdataを渡して追加処理をする．\\
+    終了後は'/db'にリダイレクトする．
+
+    \item '/db\_remove/:id'(53行目): 削除ページ(db\_remove.ejs)を呼び出す機能を持つ．\\
+    urlのidからキャラのオブジェクトを定数dataとして取得し，削除ページ(db\_remove.ejs)にdata，propertySettingsを渡して呼び出す．\\
+    idからオブジェクトを取得できなかった場合は関数errorを実行し，returnする．
+
+    \item '/db\_remove\_complete/:id'(63行目): キャラの削除処理を行う機能を持つ．\\
+    urlのidを関数removeDataに渡して削除処理をする．\\
+    終了後は'/db'にリダイレクトする．
+
+    \item '/db\_edit/:id'(69行目): 編集ページ(db\_edit.ejs)を呼び出す機能を持つ．\\
+    urlのidからキャラのオブジェクトを定数dataとして取得し，編集ページ(db\_edit.ejs)にdata，propertiesを渡して呼び出す．\\
+    idからオブジェクトを取得できなかった場合は関数errorを実行し，returnする．
+
+    \item '/db\_edit\_complete/:id'(79行目): キャラの編集処理を行う機能を持つ．\\
+    編集ページ(db\_edit.ejs)から入力された情報を定数dataとして受け取り，urlのidとdataを関数editDataに渡して編集処理をする．\\
+    関数editDataからfalseを受け取った場合は関数errorを実行し，returnする．\\
+    終了後は'/db/:id'にリダイレクトする．
+
+\end{itemize}
+
+\subsubsection{使用する関数}
+\begin{itemize}
+    \item getId(92行目) 入力: なし，出力: int\\
+    実行されるごとにidとして固有の数値を返す機能を持つ．\\
+    idManagerに1を足してその値を返す．
+    
+    \item addData(97行目) 入力: Object data，出力: なし\\
+    入力された新しいキャラのオブジェクトにidを与えてdataListに保存する機能を持つ．\\
+    関数getIdによってidを与え，dataListにpushする．
+
+    \item removeData(102行目) 入力: int id，出力: なし\\
+    入力されたidをもとにdataListからオブジェクトを削除する機能を持つ．\\
+    入力されたid一致しないidを持つオブジェクトのみで構成される配列を作成し，それをdataListに上書きする．
+
+    \item editData(106行目) 入力: int id，Object data，出力: boolean\\
+    dataList内の既存のオブジェクトの情報を新しいオブジェクトの情報に書き換える機能を持つ．\\
+    入力されたidよりdataListから既存のオブジェクトの位置を探索し，入力されたdataより新しいオブジェクトの情報に上書きする．\\
+    dataList内にオブジェクトが見つからなかった場合はfalseを，そうでなければtrueを返す．
+    
+    \item error(115行目) 入力: Object res，出力: なし\\
+    エラーページ('db\_error.html')を呼び出す機能を持つ．
+
+    \item setDefaultData(119行目) 入力: なし，出力: なし\\
+    dataListに初期値としてオブジェクトを登録する機能を持つ．\\
+    関数内の定数defaultDataは二次元配列になっており，外側の配列内の要素は一つのオブジェクトを表しており，内側の配列内の要素はpropertiesの順番にオブジェクト内の要素として登録されていく．\\
+    定数fixedDataとしてオブジェクト化された各要素はfixedDataを関数addDataに渡してdataListに追加される．
+\end{itemize}
+
+\subsection{db.ejs}
+\subsubsection{db.ejsの概要と全体}
+db.ejsは複数のキャラ情報の一覧を表示するためのページであり，
+各キャラのidや設定された項目値を表形式で表示する機能を持つ．
+また，追加ページや詳細ページへの遷移リンクも提供する．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=15cm\textwidth]{fig/ow_list_page.png}
+  \caption{一覧表示ページ}
+  \label{fig:ow_list_page_dev}
+\end{figure}
+
+\begin{lstlisting}[language=ejs]
+    <!Doctype html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Orangestarキャラ一覧</title>
+    </head>
+    <body>
+      <h2>Orangestarキャラ一覧</h2>
+      <p><a href="/db_add">キャラを追加する</a></p>
+      <table border="1">
+        <tr>
+          <th>ID</th>
+
+          <% for (const property of properties) { %>
+            <% if (property.view === undefined || property.view === true) { %><th><%= property.label %></th><% }; %>
+          <% }; %>
+        </tr>
+
+        <% for (const data of dataList) { %>
+          <tbody>
+            <td><%= data.id %></td>
+            <% for (const property of properties) { %>
+              <% if (property.view !== undefined && property.view === false) continue; %>
+              <% if (property.propertyName === propertySettings.click) { %>
+                <td><a href="/db/<%= data.id %>"><%= data[property.propertyName] %></a></td>
+              <% } else if (property.type === 'url') { %>
+                <td><a href="<%= data[property.propertyName] %>"><%= data[property.propertyName] %></a></td>
+              <% } else if (property.type === 'textarea') { %>
+                <td><pre><%= data[property.propertyName] %></pre></td>
+              <% } else { %>
+                <td><%= data[property.propertyName] %></td>
+              <% }; %>
+            <% }; %>
+          </tbody>
+        <% }; %>
+      </table><br>
+    </body>
+    </html>
+\end{lstlisting}
+
+\subsubsection{ページ遷移機能}
+\begin{itemize}
+  \item 追加ページへの遷移(9行目):「キャラを追加する」リンクをクリックすると，追加ページ(db\_add.ejs)へ移動する．  
+  これはapp.jsの'/db\_add'に対応する．
+
+  \item 詳細表示ページへの遷移: propertiesのうち，propertySettings.clickに設定された項目は一覧表示時にリンクとして表示され，
+  クリックすると詳細ページ(db\_detail.ejs)へ移動する．  
+  app.jsの'/db/:id'に対応する．
+\end{itemize}
+
+\subsubsection{一覧表示機能}
+10行目からtableを作成し，一覧表示している．
+idは必ず表示する項目として12行目に直接記述し，その他の項目は14行目よりpropertiesのviewをもとに表示/非表示を判別している．
+
+19行目よりオブジェクトの各項目の情報をviewをもとに表示/非表示を判別している．\\
+各情報は以下の優先順位で表示形式が決定される．
+\begin{itemize}
+    \item click: propertySettingsのclickに指定されている項目は詳細表示ページ(db\_detail.ejs)に移動する機能を持ち，クリックするとapp.jsの'/db/:id'を呼び出す．
+    \item url: タイプがurlの場合は実際にurlにアクセスできるようになっている．
+    \item textare: タイプがtextareaの場合は情報が<pre>タグで囲まれて表示されるようになっている．
+    \item その他: 情報がそのまま表示される．
+\end{itemize}
+これらの表示形式は共存しない．
+
+\subsection{db\_detail.ejs}
+db\_detail.ejsは1キャラの情報をより詳細に表示するためのページであり，
+一覧表示ページでの情報に加えて，収録アルバムや，キャラの長さを表形式で表示する機能を持つ．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/ow_detail_page.png}
+  \caption{詳細表示ページ}
+  \label{fig:ow_detail_page_dev}
+\end{figure}
+
+\begin{lstlisting}[language=ejs]
+    <!Doctype html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title><%= data[propertySettings.main] %></title>
+    </head>
+    <body>
+      <h2><%= data[propertySettings.main] %>の詳細</h2>
+      <table border="1">
+        <tr><th>項目</th><th>データ</th></tr>
+        <tr><td>ID</td><td><%= data.id %></td></tr>
+        <% for (const property of properties ) { %>
+          <% if (property.type === 'url') { %>
+            <tr><td><%= property.label %></td><td><a href="<%= data[property.propertyName] %>"><%= data[property.propertyName] %></a></td><tr>
+          <% } else if (property.type === 'textarea') { %>
+            <tr><td><%= property.label %></td><td><pre><%= data[property.propertyName] %></pre></td></tr>
+          <% } else { %>
+            <tr><td><%= property.label %></td><td><%= data[property.propertyName] %></td></tr>
+          <% }; %>
+        <% }; %>
+      </table>
+      <a href="/db">一覧に戻る</a><br>
+      <a href="/db_remove/<%= data.id%>">削除する</a><br>
+      <a href="/db_edit/<%= data.id%>">編集する</a><br>
+    </body>
+    </html>
+\end{lstlisting}
+
+\subsubsection{タイトル変更機能}
+5行目ではタイトルを，8行目では見出しをpropertySettings.mainで指定された項目の値を表示するようにしている．
+
+\subsubsection{ページ遷移機能}
+\begin{itemize}
+    \item 一覧表示ページへの遷移(22行目):「一覧に戻る」リンクをクリックすると，一覧表示ページ(db.ejs)へ移動する．  
+  これはapp.jsの'/db'に対応する．
+
+    \item 削除ページへの遷移(23行目):「削除する」リンクをクリックすると，削除ページ(db\_remove.ejs)へ移動する．  
+  これはapp.jsの'/db\_remove'に対応する．
+
+    \item 編集ページへの遷移(24行目):「編集する」リンクをクリックすると，編集ページ(db\_edit.ejs)へ移動する．  
+  これはapp.jsの'/db\_edit'に対応する．
+\end{itemize}
+
+\subsubsection{詳細表示機能}
+9行目からtableを作成し，詳細表示している．
+idは必ず表示する項目として11行目に直接記述し，その他の項目は12行目よりpropertiesをもとに表示している．\\
+各情報は以下の優先順位で表示形式が決定される．
+\begin{itemize}
+    \item url: タイプがurlの場合は実際にurlにアクセスできるようになっている．
+    \item textare: タイプがtextareaの場合は情報が<pre>タグで囲まれて表示されるようになっている．
+    \item その他: 情報がそのまま表示される．
+\end{itemize}
+これらの表示形式は共存しない．
+
+\subsection{db\_add.ejs}
+\subsubsection{db\_add.ejsの概要と全体}
+db\_add.ejsは新たなキャラを追加するためのページであり，
+キャラの各項目ごとの情報を入力できる機能を持つ．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=5cm\textwidth]{fig/ow_add_page.png}
+  \caption{追加ページ}
+  \label{fig:ow_add_page_dev}
+\end{figure}
+
+\begin{lstlisting}[language=ejs]
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+      <meta charset="UTF-8">
+      <title>追加</title>
+    </head>
+    <body>
+      <form action="/db_add_complete">
+        <% for (const property of properties) { %>
+          <% if (property.type === 'text') { %>
+            <label for="<%= property.propertyName %>"><%= property.label%></label><br>
+            <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>"
+            <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><br>
+          <% }; %>
+
+          <% if (property.type === 'number') { %>
+            <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+            <input
+              type="number"
+              name="<%= property.propertyName %>"
+              id="<%= property.propertyName %>"
+              <% if (property.min !== undefined) { %> min="<%= property.min %>" <% }; %>
+              <% if (property.max !== undefined) { %> max="<%= property.max %>" <% }; %>
+              <% if (property.step !== undefined) { %> step="<%= property.step %>" <% }; %>
+              <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><br>
+          <% } %>
+
+          <% if (property.type === 'select') { %>
+            <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+            <select id="<%= property.propertyName %>" name="<%= property.propertyName %>">
+              <% for (const optionData of property.options) { %>
+                  <option value="<%= optionData %>"><%= optionData %></option>
+              <% }; %>
+            </select><br>
+          <% }; %>
+
+          <% if (property.type === 'url') { %>
+            <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+            <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>"
+            <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><br>
+          <% }; %>
+
+          <% if (property.type === 'time') {%>
+            <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+            <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>"
+            <% if (property.min !== undefined) { %> min="<%= property.min %>" <% }; %>
+            <% if (property.max !== undefined) { %> max="<%= property.max %>" <% }; %>
+            <% if (property.step !== undefined) { %> step="<%= property.step %>" <% }; %>
+            <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><br>
+          <% }; %>
+
+          <% if (property.type === 'textarea') { %>
+            <label for="<%= property.propertyName %>"><%= property.label%></label><br>
+            <textarea name="<%= property.propertyName %>" id="<%= property.propertyName %>"
+            <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ></textarea><br>
+          <% }; %>
+        <% }; %>
+        <input type="submit">
+      </form>
+    </body>
+    </html>
+\end{lstlisting}
+
+\subsubsection{情報入力機能}
+8行目よりフォームを作成し，オブジェクトのタイプごとに入力欄を生成している．
+タイプごとに生成される入力欄は以下のとおりである．
+\begin{itemize}
+    \item 'text'(10行目): テキスト入力用の\verb|<input type="text">|を生成する．
+    \item 'number'(17行目): 数値入力用の\verb|<input type="number">|を生成する．min，max，stepが設定されている場合は属性として付与する．
+    \item 'select'(30行目): 選択式入力のための\verb|<select>|を生成する．選択肢はoptionsより参照する．
+    \item 'url'(39行目): URL入力用の\verb|<input type="url">|を生成する．
+    \item 'time'(46行目): 時刻入力用の\verb|<input type="time">|を生成する．min，max，stepが設定されている場合は属性として付与する．
+    \item 'textarea'(56行目): 複数行テキスト入力用の\verb|<textarea>|を生成する．
+\end{itemize}
+'select'タイプを除く各項目においてrequiredがtrueであればrequired属性を付与する．
+
+\subsubsection{情報送信機能}
+63行目では送信ボタンとして\verb|<input type="submit">|を生成し，app.jsの'/db\_add\_complete'に入力した情報を送信する．
+
+\subsection{db\_edit.ejs}
+\subsubsection{db\_edit.ejsの概要と全体}
+db\_edit.ejsはキャラの情報を編集するためのページであり，
+キャラの各項目ごとの情報を入力できる機能を持つ．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=5cm\textwidth]{fig/ow_edit_page.png}
+  \caption{編集ページ}
+  \label{fig:ow_edit_page_dev}
+\end{figure}
+
+\begin{lstlisting}[language=ejs]
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+      <meta charset="UTF-8">
+      <title>編集</title>
+    </head>
+    <body>
+      <form action="/db_edit_complete/<%= data.id%>">
+        <% for (const property of properties) { %>
+          <% if (property.type === 'text') { %>
+            <label for="<%= property.propertyName %>"><%= property.label%></label><br>
+            <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>" value="<%= data[property.propertyName]%>"
+            <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><br>
+          <% }; %>
+
+          <% if (property.type === 'number') { %>
+            <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+            <input
+              type="number"
+              name="<%= property.propertyName %>"
+              id="<%= property.propertyName %>"
+              value="<%= data[property.propertyName]%>"
+              <% if (property.min !== undefined) { %> min="<%= property.min %>" <% }; %>
+              <% if (property.max !== undefined) { %> max="<%= property.max %>" <% }; %>
+              <% if (property.step !== undefined) { %> step="<%= property.step %>" <% }; %>
+              <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><br>
+          <% } %>
+
+          <% if (property.type === 'select') { %>
+            <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+            <select id="<%= property.propertyName %>" name="<%= property.propertyName %>">
+              <% for (const optionData of property.options) { %>
+                  <option value="<%= optionData %>"
+                    <% if (data[property.propertyName] === optionData) { %>selected<% }; %>  
+                  ><%= optionData %></option>
+              <% }; %>
+            </select>
+          <% }; %>
+
+          <% if (property.type === 'url') { %>
+            <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+            <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>" value="<%= data[property.propertyName] %>"
+            <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><br>
+          <% }; %>
+
+          <% if (property.type === 'time') {%>
+          <label for="<%= property.propertyName %>"><%= property.label %></label><br>
+          <input type="<%= property.type %>" name="<%= property.propertyName %>" id="<%= property.propertyName %>" value="<%= data[property.propertyName] %>"
+          <% if (property.min !== undefined) { %> min="<%= property.min %>" <% }; %>
+          <% if (property.max !== undefined) { %> max="<%= property.max %>" <% }; %>
+          <% if (property.step !== undefined) { %> step="<%= property.step %>" <% }; %>
+          <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+          ><br>
+          <% }; %>
+
+          <% if (property.type === 'textarea') { %>
+            <label for="<%= property.propertyName %>"><%= property.label%></label><br>
+            <textarea name="<%= property.propertyName %>" id="<%= property.propertyName %>"
+            <% if (property.required !== undefined && property.required === true) { %>required<% }; %>
+            ><%= data[property.propertyName]%></textarea><br>
+          <% }; %>
+        <% }; %>
+        <input type="submit">
+      </form>
+    </body>
+    </html>
+\end{lstlisting}
+
+\subsubsection{情報入力機能}
+8行目よりフォームを作成し，オブジェクトのタイプごとに入力欄を生成している．
+タイプごとに生成される入力欄は以下のとおりである．
+\begin{itemize}
+    \item 'text'(10行目): テキスト入力用の\verb|<input type="text">|を生成する．
+    \item 'number'(17行目): 数値入力用の\verb|<input type="number">|を生成する．min，max，stepが設定されている場合は属性として付与する．
+    \item 'select'(31行目): 選択式入力のための\verb|<select>|を生成する．選択肢はoptionsより参照する．
+    \item 'url'(42行目): URL入力用の\verb|<input type="url">|を生成する．
+    \item 'time'(49行目): 時刻入力用の\verb|<input type="time">|を生成する．min，max，stepが設定されている場合は属性として付与する．
+    \item 'textarea'(59行目): 複数行テキスト入力用の\verb|<textarea>|を生成する．
+\end{itemize}
+'select'タイプを除く各項目においてrequiredがtrueであればrequired属性を付与する．\\
+さらに，編集前のオブジェクトの値がvalue="..."や\verb|<textarea>...</textarea>|として各入力欄の初期値に設定される．
+
+\subsubsection{情報送信機能}
+66行目では送信ボタンとして\verb|<input type="submit">|を生成し，app.jsの'/db\_edit\_complete/:id'に入力した情報を送信する．
+
+\subsection{db\_remove.ejs}
+\subsubsection{db\_remove.ejsの全体と概要}
+db\_remove.ejsはキャラを削除する際の最終確認をするページであり，
+キャラを削除するか選択できる機能を持つ．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/ow_remove_page.png}
+  \caption{削除ページ}
+  \label{fig:ow_remove_page_dev}
+\end{figure}
+
+\begin{lstlisting}[language=ejs]
+    <!Doctype html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>削除</title>
+    </head>
+    <body>
+      <h2>本当に「<%= data[propertySettings.main]%>」を削除しますか？</h2>
+      <p><a href="/db/<%= data.id%>">キャンセル</a></p>
+      <p><a href="/db_remove_complete/<%= data.id%>">削除する</a></p>
+    </body>
+    </html>
+\end{lstlisting}
+
+\subsubsection{オブジェクト名表示機能}
+8行目では，プログラム上ではキャラをオブジェクトとして認識しているので，
+ユーザーが理解できるようにpropertySettings.mainで指定された項目の値を表示するようにしている．
+
+\subsubsection{ページ遷移機能}
+\begin{itemize}
+    \item 詳細表示ページへの遷移(9行目):「キャンセル」リンクをクリックすると，詳細表示ページ(db\_detail.ejs)へ移動する．  
+  これはapp.jsの'/db/:id'に対応する．
+    \item 削除処理の実行(10行目):「削除する」リンクをクリックすると，削除処理が実行され，一覧表示ページ(db.ejs)へ移動する．  
+  これはapp.jsの'/db\_remove\_complete'に対応する．
+\end{itemize}
+
+\subsection{db\_error.html}
+\subsubsection{db\_error.htmlの概要と全体}
+db\_error.ejsはオブジェクトが取得できなかった時に表示されるページであり，
+エラー動作から通常の動作へ戻す機能を持つ．
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=11cm\textwidth]{fig/error_page.png}
+  \caption{エラーページ}
+  \label{fig:error_page_dev}
+\end{figure}
+
+\begin{lstlisting}[language=html]
+    <!Doctype html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>エラー</title>
+    </head>
+    <body>
+      <p>エラー: データが取得できませんでした</p>
+      <p><a href="/db">一覧に戻る</a></p>
+    </body>
+    </html>
+\end{lstlisting}
+
+\subsubsection{ページ遷移機能}
+一覧表示ページへの遷移(9行目): 「一覧に戻る」リンクをクリックすると，一覧表示ページ(db.ejs)へ移動する．  
+これはapp.jsの'/db'に対応する．
